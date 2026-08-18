@@ -1,0 +1,72 @@
+import sklearn_crfsuite
+def word_features(sentence, i):
+
+    word = sentence[i]
+
+    features = {
+        'word.lower()': word.lower(),
+        'word.isdigit()': word.isdigit(),
+        'word.istitle()': word.istitle(),
+        'word.isupper()': word.isupper()
+    }
+    if i > 0:
+        features['previous_word'] = sentence[i-1].lower()
+    else:
+        features['BOS'] = True
+    if i < len(sentence)-1:
+        features['next_word'] = sentence[i+1].lower()
+    else:
+        features['EOS'] = True
+
+    return features
+sentences = [
+    ["John", "ordered", "Laptop", "Order123"],
+    ["Alice", "bought", "Phone", "Order456"],
+    ["David", "ordered", "Tablet", "Order789"]
+]
+labels = [
+    ["B-CUSTOMER", "O", "B-PRODUCT", "B-ORDER"],
+    ["B-CUSTOMER", "O", "B-PRODUCT", "B-ORDER"],
+    ["B-CUSTOMER", "O", "B-PRODUCT", "B-ORDER"]
+]
+X = []
+y = []
+
+for sentence, label in zip(sentences, labels):
+
+    features = []
+
+    for i in range(len(sentence)):
+        features.append(word_features(sentence, i))
+
+    X.append(features)
+    y.append(label)
+crf = sklearn_crfsuite.CRF(
+    algorithm='lbfgs',
+    max_iterations=100
+)
+crf.fit(X, y)
+test_sentence = [
+    "Robert",
+    "ordered",
+    "Laptop",
+    "Order999"
+]
+test_features = []
+
+for i in range(len(test_sentence)):
+    test_features.append(
+        word_features(test_sentence, i)
+    )
+prediction = crf.predict([test_features])
+print("Sentence:")
+print(test_sentence)
+
+print("\nPredicted Labels:")
+
+for word, label in zip(
+    test_sentence,
+    prediction[0]
+):
+    print(word, "->", label)
+    print("Damodhar(192525266)")
