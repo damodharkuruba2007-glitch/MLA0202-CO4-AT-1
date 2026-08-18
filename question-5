@@ -1,0 +1,68 @@
+import pandas as pd
+
+from pgmpy.estimators import HillClimbSearch, BayesianEstimator
+from pgmpy.models import DiscreteBayesianNetwork
+from pgmpy.inference import VariableElimination
+data = pd.DataFrame({
+
+    'Age': [
+        'Young', 'Young', 'Young',
+        'Middle', 'Middle', 'Middle',
+        'Old', 'Old', 'Old', 'Young'
+    ],
+
+    'Income': [
+        'Low', 'High', 'High',
+        'Low', 'High', 'High',
+        'Low', 'High', 'High', 'Low'
+    ],
+
+    'Vehicle': [
+        'Car', 'Car', 'Bike',
+        'Car', 'Bike', 'Car',
+        'Bike', 'Car', 'Car', 'Bike'
+    ],
+
+    'Claim': [
+        'Yes', 'No', 'No',
+        'Yes', 'No', 'No',
+        'Yes', 'No', 'No', 'Yes'
+    ]
+})
+print("Customer Dataset:")
+print(data)
+hc = HillClimbSearch(data)
+
+best_model = hc.estimate()
+
+print("\nLearned Network Structure:")
+print(list(best_model.edges()))
+
+
+model = DiscreteBayesianNetwork(
+    best_model.edges()
+)
+estimator = BayesianEstimator(model, data)
+model.fit(
+    data,
+    estimator=estimator,
+    prior_type='BDeu',
+    equivalent_sample_size=10
+)
+print("\nModel is valid:",
+      model.check_model())
+inference = VariableElimination(model)
+result = inference.query(
+    variables=['Claim'],
+    evidence={
+        'Age': 'Young',
+        'Income': 'Low',
+        'Vehicle': 'Bike'
+    }
+)
+print("\nPrediction for New Customer:")
+print(result)
+
+print("\nProbability of Insurance Claim =",
+      result.values[1])
+print("Damodhar(192525266)")
